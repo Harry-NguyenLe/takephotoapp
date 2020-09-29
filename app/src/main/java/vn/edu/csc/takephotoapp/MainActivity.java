@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -21,7 +21,7 @@ import androidx.core.content.ContextCompat;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.util.UUID;
+import java.util.Objects;
 
 import io.fotoapparat.Fotoapparat;
 import io.fotoapparat.parameter.ScaleType;
@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
         int PERMISSION_ALL = 1;
         String[] PERMISSIONS = {
                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE,
                 android.Manifest.permission.CAMERA
         };
         if (!hasPermission(this, PERMISSIONS)) {
@@ -82,11 +83,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.CAMERA}, REQUEST_CODE_PERMISSION);
-        }
+        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.CAMERA}, REQUEST_CODE_PERMISSION);
     }
 
     @Override
@@ -135,14 +134,27 @@ public class MainActivity extends AppCompatActivity {
 
     public void capturePhoto() {
         PhotoResult photoResult = fotoapparat.takePicture();
-        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
-                IMAGE_CACHE_FILE_PATH + "/" + UUID.randomUUID().toString() + ".jpg");
-        photoResult.saveToFile(file).whenDone(unit -> {
+        photoResult.saveToFile(getAbsoluteDir(this, null)).whenDone(unit -> {
             Intent intent = new Intent(this, ImageShowActivity.class);
-            intent.putExtra("file_path", file.getAbsolutePath());
+            intent.putExtra("file_path", getAbsoluteDir(this, null).getAbsolutePath());
             startActivity(intent);
         });
 
+    }
+
+    public static File getAbsoluteDir(Context ctx, String optionalPath) {
+        String rootPath;
+        if (!TextUtils.isEmpty(optionalPath)) {
+            rootPath = Objects.requireNonNull(ctx.getExternalFilesDir(optionalPath)).getAbsolutePath();
+        } else {
+            rootPath = Objects.requireNonNull(ctx.getExternalFilesDir(null)).getAbsolutePath();
+        }
+        // extraPortion is extra part of file path
+        String extraPortion = "Android/data/" + BuildConfig.APPLICATION_ID
+                + File.separator + "files" + File.separator + ".jpg";
+        // Remove extraPortion
+        rootPath = rootPath.replace(extraPortion, "");
+        return new File(rootPath);
     }
 
     private Fotoapparat createFotoapparat() {

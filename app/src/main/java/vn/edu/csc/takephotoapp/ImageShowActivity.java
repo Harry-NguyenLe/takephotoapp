@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
@@ -13,9 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.UUID;
-
-import static vn.edu.csc.takephotoapp.MainActivity.IMAGE_CACHE_FILE_PATH;
 
 public class ImageShowActivity extends AppCompatActivity {
     private ImageView image;
@@ -43,10 +39,8 @@ public class ImageShowActivity extends AppCompatActivity {
     }
 
     private void saveToLocalFile(Bitmap bitmap) {
-        file_saved = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + IMAGE_CACHE_FILE_PATH + "/"
-                + UUID.randomUUID().toString() + ".jpg");
         try {
-            FileOutputStream out = new FileOutputStream(file_saved);
+            FileOutputStream out = new FileOutputStream(MainActivity.getAbsoluteDir(this, null));
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
             out.flush();
             out.close();
